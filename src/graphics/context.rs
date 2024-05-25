@@ -814,7 +814,8 @@ impl GraphicsContext {
                 window.set_maximized(mode.maximized);
             }
             FullscreenType::True => {
-                if let Some(monitor) = window.current_monitor() {
+                let mut has_result = false;
+                for monitor in window.available_monitors() {
                     let v_modes = monitor.video_modes();
                     // try to find a video mode with a matching resolution
                     let mut match_found = false;
@@ -827,12 +828,17 @@ impl GraphicsContext {
                             break;
                         }
                     }
-                    if !match_found {
-                        return Err(GameError::WindowError(format!(
-                            "resolution {}x{} is not supported by this monitor",
-                            mode.width, mode.height
-                        )));
+                    if match_found {
+                        has_result = true;
+                        break;
                     }
+                }
+
+                if !has_result {
+                    return Err(GameError::WindowError(format!(
+                        "no suitable video mode found for fullscreen resolution on any screen {}x{}",
+                        mode.width, mode.height
+                    )));
                 }
             }
             FullscreenType::Desktop => {
